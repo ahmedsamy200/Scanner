@@ -1,0 +1,134 @@
+using System;
+using System.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        while (true)
+        {
+            if (!EnterGrammar())
+                continue;
+
+            Console.Write("Do you want to try again? (yes/no): ");
+            string retry = Console.ReadLine().Trim().ToLower();
+            if (retry != "yes")
+                break;
+        }
+    }
+
+    static bool EnterGrammar()
+    {
+        Console.Write("Enter rule number 1 for non-terminal 'S': ");
+        string rule1 = Console.ReadLine().Trim();
+        Console.Write("Enter rule number 2 for non-terminal 'S': ");
+        string rule2 = Console.ReadLine().Trim();
+        Console.Write("Enter rule number 1 for non-terminal 'B': ");
+        string rule3 = Console.ReadLine().Trim();
+        Console.Write("Enter rule number 2 for non-terminal 'B': ");
+        string rule4 = Console.ReadLine().Trim();
+
+        return CheckRules(rule1, rule2, rule3, rule4);
+    }
+
+    static bool CheckRules(string rule1, string rule2, string rule3, string rule4)
+    {
+        if (new[] { rule1, rule2, rule3, rule4 }.Any(string.IsNullOrEmpty))
+        {
+            Console.WriteLine("The Grammar isn't Simple: Missing rules. Try again.");
+            return false;
+        }
+
+        if (new[] { rule1[0], rule2[0], rule3[0], rule4[0] }.Distinct().Count() < 4)
+        {
+            Console.WriteLine("The Grammar isn't Simple: Conflicting rule starts. Try again.");
+            return false;
+        }
+
+        if (new[] { rule1, rule2, rule3, rule4 }.Any(rule => !rule.All(char.IsLetter)))
+        {
+            Console.WriteLine("The Grammar isn't Simple: Rules must be alphabetic. Try again.");
+            return false;
+        }
+
+        Console.WriteLine("The Grammar is Simple.");
+        First(rule1, rule2, rule3, rule4);
+        return true;
+    }
+
+    static void First(string rule1, string rule2, string rule3, string rule4)
+    {
+        Console.Write("Enter the string to be checked: ");
+        string userInput = Console.ReadLine().Trim();
+        Console.WriteLine($"The input string: {string.Join(", ", userInput.ToCharArray())}");
+        int index = 0;
+
+        if (S(userInput, ref index, rule1, rule2, rule3, rule4))
+            Accept();
+        else
+            Reject();
+    }
+
+    static bool S(string userInput, ref int index, string rule1, string rule2, string rule3, string rule4)
+    {
+        if (index >= userInput.Length)
+            return false;
+
+        char inp = userInput[index];
+        if (inp == rule1[0])
+            return ApplyRule(userInput, ref index, rule1.Substring(1), rule1, rule2, rule3, rule4);
+        else if (inp == rule2[0])
+            return ApplyRule(userInput, ref index, rule2.Substring(1), rule1, rule2, rule3, rule4);
+
+        return false;
+    }
+
+    static bool B(string userInput, ref int index, string rule1, string rule2, string rule3, string rule4)
+    {
+        if (index >= userInput.Length)
+            return false;
+
+        char inp = userInput[index];
+        if (inp == rule3[0])
+            return ApplyRule(userInput, ref index, rule3.Substring(1), rule1, rule2, rule3, rule4);
+        else if (inp == rule4[0])
+            return ApplyRule(userInput, ref index, rule4.Substring(1), rule1, rule2, rule3, rule4);
+
+        return false;
+    }
+
+    static bool ApplyRule(string userInput, ref int index, string rule, string rule1, string rule2, string rule3, string rule4)
+    {
+        foreach (char charInRule in rule)
+        {
+            if (index >= userInput.Length)
+                return false;
+
+            if (char.IsUpper(charInRule)) // Non-terminal
+            {
+                if (charInRule == 'S' && !S(userInput, ref index, rule1, rule2, rule3, rule4))
+                    return false;
+                if (charInRule == 'B' && !B(userInput, ref index, rule1, rule2, rule3, rule4))
+                    return false;
+            }
+            else // Terminal
+            {
+                if (userInput[index] != charInRule)
+                    return false;
+                index++;
+            }
+        }
+
+        return index == userInput.Length;
+    }
+
+    static void Accept()
+    {
+        Console.WriteLine("Accept");
+    }
+
+    static void Reject()
+    {
+        Console.WriteLine("Reject");
+    }
+}
